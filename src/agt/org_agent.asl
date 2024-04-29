@@ -1,5 +1,7 @@
 // organization agent
 
+role_goal(R, G) :- role_mission(R, _, M) & mission_goal(M, G).
+
 /* Initial beliefs and rules */
 org_name("lab_monitoring_org"). // the agent beliefs that it can manage organizations with the id "lab_monitoting_org"
 group_name("monitoring_team"). // the agent beliefs that it can manage groups with the id "monitoring_team"
@@ -16,7 +18,34 @@ sch_name("monitoring_scheme"). // the agent beliefs that it can manage schemes w
 */
 @start_plan
 +!start : org_name(OrgName) & group_name(GroupName) & sch_name(SchemeName) <-
-  .print("Hello world").
+  .print("Hello world");
+  !setupWsp.
+
+@setup_workspace
++!setupWsp : org_name(OrgName) & group_name(GroupName) & sch_name(SchemeName) <-
+  createWorkspace(OrgName);
+  .print("Workspace created");
+  joinWorkspace(OrgName, WrkSpc);
+  .print("Workspace initally joined");
+  !setupArt.
+
+@setup_artifact_and_other
++!setupArt : org_name(OrgName) & group_name(GroupName) & sch_name(SchemeName) <-
+  makeArtifact(OrgName, "ora4mas.nopl.OrgBoard", ["src/org/org-spec.xml"], ArtId)[wid(WrkSpc)];
+  .print("Artifact created");
+  focus(ArtId)[wid(WrkSpc)];
+  createGroup(GroupName, monitoring_team, GroupId)[wid(WrkSpc)];
+  .print("Group created");
+  createScheme(SchemeName, monitoring_scheme, SchemeId)[wid(WrkSpc)];
+  .print("Scheme created");
+  focus(GroupId)[wid(WrkSpc)];
+  focus(SchemeId)[wid(WrkSpc)];
+  .broadcast(tell, react(OrgName));
+  ?formationStatus(ok)[artifact_id(GroupId)];
+  addScheme(SchemeName)[artifact_id(GroupId)];
+  .print("monitoring team resonsible for scheme");
+  !inspect(GroupId)[wid(WrkSpc)];
+  !inspect(SchemeId)[wid(WrkSpc)].
 
 /* 
  * Plan for reacting to the addition of the test-goal ?formationStatus(ok)

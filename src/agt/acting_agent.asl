@@ -1,5 +1,10 @@
 // acting agent
 
+/* Initial beliefs and rules */
+
+role_goal(R, G) :- role_mission(R, _, M) & mission_goal(M, G).
+can_achieve(G) :- .relevant_plans({+!G[scheme(_)]}, LP) & LP \== [].
+
 // The agent has a belief about the location of the W3C Web of Thing (WoT) Thing Description (TD)
 // that describes a Thing of type https://ci.mines-stetienne.fr/kg/ontology#PhantomX
 robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/tds/leubot1.ttl").
@@ -16,6 +21,25 @@ robot_td("https://raw.githubusercontent.com/Interactions-HSG/example-tds/main/td
 @start_plan
 +!start : true <-
 	.print("Hello world").
+
+@react_plan
++react(OrgName) : true <-
+	joinWorkspace(OrgName);
+	.print("Acting agent has joined: ", OrgName);
+	lookupArtifact(OrgName, Id);
+	focus(Id).
++group(GroupId, GroupType, ArtId) : true <-
+	lookupArtifact(GroupType, Id);
+	focus(Id).
++scheme(SchemeId, SchemeType, ArtId) : true <-
+	lookupArtifact(SchemeType, Id);
+	focus(Id);
+	.print("Acting Agent focusing on scheme");
+	!takeRole.
+
+@take_role_plan
++!takeRole : role_goal(R, G) & can_achieve(G) <-
+	adoptRole(R).
 
 /* 
  * Plan for reacting to the addition of the goal !manifest_temperature

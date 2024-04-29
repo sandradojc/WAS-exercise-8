@@ -3,6 +3,10 @@
 
 /* Initial beliefs and rules */
 
+role_goal(R, G) :- role_mission(R, _, M) & mission_goal(M, G).
+can_achieve(G) :- .relevant_plans({+!G[scheme(_)]}, LP) & LP \== [].
+i_have_plans_for(R) :- not (role_goal(R, G) & not can_achieve(G)).
+
 /* Initial goals */
 !start. // the agent has the goal to start
 
@@ -15,6 +19,25 @@
 @start_plan
 +!start : true <-
 	.print("Hello world").
+
+@react_plan
++react(OrgName) : true <-
+	joinWorkspace(OrgName);
+	.print("Sensing agent has joined: ", OrgName);
+	lookupArtifact(OrgName, Id);
+	focus(Id).
++group(GroupId, GroupType, ArtId) : true <-
+	lookupArtifact(GroupType, Id);
+	focus(Id).
++scheme(SchemeId, SchemeType, ArtId) : true <-
+	lookupArtifact(SchemeType, Id);
+	focus(Id);
+	.print("Sensing Agent focusing on scheme");
+	!reasonRole.
+
+@reason_role_plan
++!reasonRole : role_goal(R, G) & i_have_plans_for(R) <-
+	adoptRole(R).
 
 /* 
  * Plan for reacting to the addition of the goal !read_temperature
